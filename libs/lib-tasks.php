@@ -1,5 +1,13 @@
 <?php
 
+
+/**
+ * 
+ * To receive a list of product
+ * 
+ * return --> PDO::FETCH_OBJ
+ * 
+ */
 function getProducts()
 {
     global $PDO;
@@ -14,10 +22,16 @@ function getProducts()
     return $records;
 }
 
-
+/**
+ * 
+ * To check purchase request information (It actually does nothing)
+ * p --> _POST
+ * return --> addOrder()
+ * 
+ */
 function checkProduct($p)
 {
-    $o = array(
+    $order = array(
         "product" => $p["uc"],
         "userid" => $p["id"],
         "username" => $p["uName"],
@@ -26,11 +40,16 @@ function checkProduct($p)
         "number" => $p["tel"],
         "description" => $p["dec"]
     );
-
-    return addOrder($o);
+    return addOrder($order);
 }
 
-
+/**
+ * 
+ * To Add order in database
+ * o --> array
+ * return --> json
+ * 
+ */
 function addOrder($o)
 {
     global $PDO;
@@ -45,8 +64,13 @@ function addOrder($o)
     return '{"response":' . $stmt->rowCount() . ',"id":"' . $PDO->lastInsertId() . '"}';
 }
 
-
-
+/**
+ * 
+ * To receive a special order
+ * id --> orders id
+ * return --> PDO::FETCH_OBJ or null
+ * 
+ */
 function getOrder($id)
 {
 
@@ -62,9 +86,14 @@ function getOrder($id)
     return $records[0] ?? null;
 }
 
-
-
-
+/**
+ * 
+ * The payment operations booklet creates a temporary list
+ * id --> orders id
+ * authority --> code
+ * return --> true or false
+ * 
+ */
 function addAuthority($id, $authority)
 {
     global $PDO;
@@ -79,6 +108,13 @@ function addAuthority($id, $authority)
 }
 
 
+/**
+ * 
+ * To get the price of the product
+ * id --> Product id
+ * return --> price or null
+ * 
+ */
 function getUcPrice($id)
 {
     $product = getProduct($id);
@@ -88,6 +124,13 @@ function getUcPrice($id)
     return null;
 }
 
+/**
+ * 
+ * To get value of product
+ * id --> Product id
+ * return --> value or null
+ * 
+ */
 function getUcvalue($id)
 {
     $product = getProduct($id);
@@ -97,7 +140,13 @@ function getUcvalue($id)
     return null;
 }
 
-
+/**
+ * 
+ * To calculate the price
+ * id --> order id
+ * return --> getUcPrice() or null
+ * 
+ */
 function getOrderPrice($oId)
 {
     $order = getOrder($oId);
@@ -107,7 +156,13 @@ function getOrderPrice($oId)
     return null;
 }
 
-
+/**
+ * 
+ * To receive a product
+ * id --> product id
+ * return --> PDO::FETCH_OBJ or null
+ * 
+ */
 function getProduct($id)
 {
     global $PDO;
@@ -130,10 +185,18 @@ function addPaidList($result, $id)
 }
 
 
+/**
+ * 
+ * The main function is to save the paid invoice
+ * id --> order id
+ * result --> zarinpal result
+ * return --> true(good) or false(bad)
+ * 
+ */
+
 function addPaid($result, $id)
 {
     try {
-
         global $PDO;
         $s = [
             "result" => false,
@@ -167,7 +230,6 @@ function addPaid($result, $id)
         $s["plId"] = $PDO->lastInsertId();
 
         try {
-
             $sql = "UPDATE `orders` SET `state` = 'closed' WHERE `orders`.`id` = :id;";
             $stmt = $PDO->prepare($sql);
             $stmt->execute([':id' => $id]);
@@ -184,33 +246,47 @@ function addPaid($result, $id)
         return false;
     }
 
-
     $s["result"] = true;
     $_SESSION["pl"] = $s;
-
     return true;
 }
 
-
-function sendMail($result,$id)
+/**
+ * 
+ * To send a confirmation email to the customer
+ * id --> order id
+ * result --> zarinpal result
+ * return --> 
+ * 
+ */
+function sendMail($result, $id)
 {
-    $order = getOrder($id);
-$number = 20;
-    if ($order == null) {
-        return ;
-    }
     if (isset($_SESSION["pl"])) {
+        $r = $_SESSION["pl"];
+        $order = getOrder($id);
+        $ref_id = $result["data"]["ref_id"];
+        $trackCode = $r["plId"];
+        if ($order == null) {
+            return;
+        }
         $to      = $order->email;
         $subject = 'خرید یوسی';
-        $message = 'خرید شما با موفقیت انجام شد\n'."شماره رهگیری: $number";
-        $headers = 'From: '.BASE_MAIL ;
-
+        $message = '  خرید شما با موفقیت انجام شد  ';
+        $message = $message . "  شماره تراکنش  $ref_id ";
+        $message = $message . "  شماره رهگیری  $trackCode ";
+        $headers = 'From: ' . BASE_MAIL;
         mail($to, $subject, $message, $headers);
     }
 }
 
 
-
+/**
+ * 
+ * To get a member from the paidlist
+ * id --> paidlist id
+ * return --> PDO::FETCH_OBJ or null
+ * 
+ */
 function getPaidForTrack($id)
 {
     global $PDO;
@@ -222,10 +298,16 @@ function getPaidForTrack($id)
         return null;
     }
     $records = $stmt->fetchAll(PDO::FETCH_OBJ);
-
     return $records[0] ?? null;
 }
 
+/**
+ * 
+ * To track the order
+ * id --> paidlist id
+ * return --> array
+ * 
+ */
 function getTrack($id)
 {
     $arr = [];
@@ -239,7 +321,6 @@ function getTrack($id)
             array_push($arr, ".سفارش شما با موفقیت ثبت و در حال پردازش هست");
             array_push($arr, "$paied->created_at   :زمان سفارش");
             array_push($arr, "$paied->uc uc  :مقدار سفارش");
-
             // array_push($arr, "$paied->uc uc  :مبلغ سفارش");
             break;
         case 'paid':
@@ -249,130 +330,10 @@ function getTrack($id)
             array_push($arr, "$paied->uc uc  :مقدار سفارش");
             array_push($arr, ".با تشکر از اعتماد شما");
             return $arr;
-
             break;
         default:
             array_push($arr, ".سفارش شما از روند معمولی پردازش خارج شده با پشتیبانی تماس حاصل نمایید");
             break;
     }
     return $arr;
-}
-
-/** */
-function getFolders()
-{
-    global $PDO;
-    $current_user_id = getCurrentUserId();
-    try {
-        $sql = "select * from folder where user_id= $current_user_id";
-        $stmt = $PDO->prepare($sql);
-        $stmt->execute();
-    } catch (Exception $e) {
-        diePage($e->getMessage(), "get Folder Faile");
-    }
-    $records = $stmt->fetchAll(PDO::FETCH_OBJ);
-    return $records;
-}
-
-function deleteFolder($folder_id)
-{
-    global $PDO;
-    try {
-        $sql = "delete from folder where id= $folder_id";
-        $stmt = $PDO->prepare($sql);
-        $stmt->execute();
-    } catch (Exception $e) {
-        diePage($e->getMessage(), "delete Folder Faile");
-    }
-
-    return $stmt->rowCount();
-}
-
-function addFolder($folderName)
-{
-    $current_user_id = getCurrentUserId();
-
-    global $PDO;
-    try {
-        $sql = "INSERT INTO `folder` (`name`, `user_id`) VALUES (:folderName, :current_user_id);";
-        $stmt = $PDO->prepare($sql);
-        $stmt->execute([':folderName' => $folderName, ':current_user_id' => $current_user_id]);
-    } catch (Exception $e) {
-        diePage($e->getMessage(), "add Folder Faile");
-    }
-
-    return '{"response":' . $stmt->rowCount() . ',"id":' . $PDO->lastInsertId() . '}';
-}
-function getTasks($folder_id = 0)
-{
-    $s = "";
-    if ($folder_id != 0) {
-        $s = " and folder_id= $folder_id";
-    }
-    global $PDO;
-    $current_user_id = getCurrentUserId();
-    try {
-        $sql = "select * from tasks where user_id= $current_user_id $s";
-        $stmt = $PDO->prepare($sql);
-        $stmt->execute();
-    } catch (Exception $e) {
-        diePage($e->getMessage(), "get tasks Faile");
-    }
-    $records = $stmt->fetchAll(PDO::FETCH_OBJ);
-    return $records;
-}
-
-
-function deleteTasks($task_id)
-{
-    global $PDO;
-    try {
-        $sql = "delete from tasks where id= $task_id";
-        $stmt = $PDO->prepare($sql);
-        $stmt->execute();
-    } catch (Exception $e) {
-        diePage($e->getMessage(), "delete Task Faile");
-    }
-
-    return $stmt->rowCount();
-}
-
-
-function addTask($title, $folderId)
-{
-
-    $current_user_id = getCurrentUserId();
-
-    global $PDO;
-    try {
-        $sql = "INSERT INTO `tasks` (`title`, `user_id`,`folder_id`) VALUES (:title, :current_user_id, :folderId);";
-        $stmt = $PDO->prepare($sql);
-        $stmt->execute([':title' => $title, ':current_user_id' => $current_user_id, ':folderId' => $folderId]);
-    } catch (Exception $e) {
-        diePage($e->getMessage(), "add task Faile");
-    }
-
-    return '{"response":' . $stmt->rowCount() . ',"id":' . $PDO->lastInsertId() . '}';
-}
-
-
-function doneSwitch($taskId)
-{
-    $current_user_id = getCurrentUserId();
-
-    global $PDO;
-    try {
-        $sql = "Update `tasks` set is_done = 1 - is_done where user_id = :userId and  id = :taskId;";
-        $stmt = $PDO->prepare($sql);
-        $stmt->execute([':taskId' => $taskId, 'userId' => $current_user_id]);
-    } catch (Exception $e) {
-        diePage($e->getMessage(), "Switch task Faile");
-    }
-
-    return '{"response":' . $stmt->rowCount() . ',"id":' . $PDO->lastInsertId() . '}';
-}
-
-function removeTasks()
-{
-    return [1, 1, 2, 3, 4];
 }

@@ -6,5 +6,4 @@ if (isset($_SESSION["pl"])) {
     header('Location: ' . BASE_URL);
 }
 
-// $orderId = $_SESSION["pl_id"];
 include "tpl/tpl_result.php";

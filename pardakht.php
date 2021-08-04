@@ -39,7 +39,6 @@ if ($err) {
     if (empty($result['errors'])) {
         if ($result['data']['code'] == 100) {
 
-
             if (addAuthority($orderId, $result['data']["authority"])) {
                 header('Location: https://www.zarinpal.com/pg/StartPay/' . $result['data']["authority"]);
             } else {
@@ -48,7 +47,6 @@ if ($err) {
         }
     } else {
         header('Location: ' . BASE_URL);
-
         echo 'Error Code: ' . $result['errors']['code'];
         echo 'message: ' .  $result['errors']['message'];
     }

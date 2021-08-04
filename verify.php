@@ -37,17 +37,15 @@ if ($err) {
 
         if (addPaidList($result, $orderId)) {
             header('Location: ' . BASE_URL . 'result.php');
-            try{
-                sendMail($orderId);
-            }catch(Exception $e){
-                
+            try {
+                sendMail($result, $orderId);
+            } catch (Exception $e) {
             }
-            
-
         } else {
             $resultJson = json_encode($result);
             $r = json_decode($resultJson);
             echo "مشکلی در ثبت سفارش شما پیش آمده حتما به پشتیبانی پیام دهید";
+            print $result['data']['ref_id'];
             echo "code: ";
         }
     } else {
