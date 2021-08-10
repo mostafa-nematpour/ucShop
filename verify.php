@@ -46,6 +46,7 @@ if ($err) {
             $r = json_decode($resultJson);
             echo "مشکلی در ثبت سفارش شما پیش آمده حتما به پشتیبانی پیام دهید";
             print $result['data']['ref_id'];
+            print $result;
             echo "code: ";
         }
     } else {
